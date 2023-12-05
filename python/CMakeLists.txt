@@ -1,3 +1,6 @@
+# Include python before pybind11
+find_package(Python REQUIRED COMPONENTS Interpreter Development.Module)
+
 # download pybind11
 include(FetchContent)
 FetchContent_Declare(
