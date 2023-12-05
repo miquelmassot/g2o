@@ -49,6 +49,7 @@
 #include "optimization_algorithm.h"
 #include "robust_kernel.h"  // IWYU pragma: keep
 
+#ifndef NDEBUG
 namespace {
 /**
  * tests whether there is a NaN in the array
@@ -62,6 +63,7 @@ bool arrayHasNaN(const double* array, int size, int* nanIndex = 0) {
   return false;
 }
 }  // namespace
+#endif
 
 namespace g2o {
 
@@ -249,8 +251,7 @@ bool SparseOptimizer::initializeOptimization(HyperGraph::VertexSet& vset,
           int k;
           bool hasNan = arrayHasNaN(estimateData.data(), estimateDim, &k);
           if (hasNan)
-            G2O_WARN("{}: Vertex {} contains a nan entry at index {}",
-                     __PRETTY_FUNCTION__, v->id(), k);
+            G2O_WARN("Vertex {} contains a nan entry at index {}", v->id(), k);
         }
       }
 #endif
@@ -361,9 +362,8 @@ void SparseOptimizer::computeInitialGuess(EstimatePropagatorCost& propagator) {
 int SparseOptimizer::optimize(int iterations, bool online) {
   if (ivMap_.empty()) {
     G2O_WARN(
-        "{}: 0 vertices to optimize, maybe forgot to call "
-        "initializeOptimization()",
-        __PRETTY_FUNCTION__);
+        "0 vertices to optimize, maybe forgot to call "
+        "initializeOptimization()");
     return -1;
   }
 
@@ -373,7 +373,7 @@ int SparseOptimizer::optimize(int iterations, bool online) {
 
   ok = algorithm_->init(online);
   if (!ok) {
-    G2O_ERROR("{}: Error while initializing", __PRETTY_FUNCTION__);
+    G2O_ERROR("Error while initializing");
     return -1;
   }
 
@@ -430,9 +430,7 @@ void SparseOptimizer::update(double* update) {
   for (auto* v : ivMap_) {
 #ifndef NDEBUG
     bool hasNan = arrayHasNaN(update, v->dimension());
-    if (hasNan)
-      G2O_WARN("{}: Update contains a nan for vertex {}", __PRETTY_FUNCTION__,
-               v->id());
+    if (hasNan) G2O_WARN("Update contains a nan for vertex {}", v->id());
 #endif
     new (&updateMap) VectorX::MapType(update, v->dimension());
     v->oplus(updateMap);
