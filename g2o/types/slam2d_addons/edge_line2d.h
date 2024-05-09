@@ -27,12 +27,8 @@
 #ifndef G2O_EDGE_LINE2D_H
 #define G2O_EDGE_LINE2D_H
 
-#include <Eigen/Core>
-#include <iosfwd>
-
 #include "g2o/core/base_binary_edge.h"
 #include "g2o/core/eigen_types.h"
-#include "g2o/core/optimizable_graph.h"
 #include "g2o/types/slam2d_addons/g2o_types_slam2d_addons_api.h"
 #include "g2o/types/slam2d_addons/line_2d.h"
 #include "vertex_line2d.h"
@@ -44,29 +40,14 @@ class G2O_TYPES_SLAM2D_ADDONS_API EdgeLine2D
  public:
   EdgeLine2D();
 
-  void computeError() override {
-    const VertexLine2D* v1 = vertexXnRaw<0>();
-    const VertexLine2D* v2 = vertexXnRaw<1>();
-    error_ = (v2->estimate() - v1->estimate()) - measurement_;
-  }
-  bool read(std::istream& is) override;
-  bool write(std::ostream& os) const override;
+  void computeError() override;
 
   void setMeasurement(const Line2D& m) override { measurement_ = m; }
 
   virtual void setMeasurement(const Vector2& m) { measurement_ = Line2D(m); }
 
-  bool setMeasurementFromState() override {
-    const VertexLine2D* v1 = vertexXnRaw<0>();
-    const VertexLine2D* v2 = vertexXnRaw<1>();
-    measurement_ = Line2D(Vector2(v2->estimate()) - Vector2(v1->estimate()));
-    return true;
-  }
+  bool setMeasurementFromState() override;
 
-  double initialEstimatePossible(const OptimizableGraph::VertexSet&,
-                                 OptimizableGraph::Vertex*) override {
-    return 0;
-  }
   void linearizeOplus() override;
 };
 

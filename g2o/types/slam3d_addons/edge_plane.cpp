@@ -26,9 +26,6 @@
 
 #include "edge_plane.h"
 
-#include "g2o/core/io_helper.h"
-#include "g2o/types/slam3d_addons/vertex_plane.h"
-
 namespace g2o {
 
 EdgePlane::EdgePlane() {
@@ -36,16 +33,21 @@ EdgePlane::EdgePlane() {
   error_.setZero();
 }
 
-bool EdgePlane::read(std::istream& is) {
-  Vector4 v;
-  internal::readVector(is, v);
-  setMeasurement(v);
-  return readInformationMatrix(is);
+void EdgePlane::computeError() {
+  auto* v1 = vertexXnRaw<0>();
+  auto* v2 = vertexXnRaw<1>();
+  error_ =
+      (v2->estimate().toVector() - v1->estimate().toVector()) - measurement_;
 }
 
-bool EdgePlane::write(std::ostream& os) const {
-  internal::writeVector(os, measurement());
-  return writeInformationMatrix(os);
+void EdgePlane::setMeasurement(const Vector4& m) { measurement_ = m; }
+
+bool EdgePlane::setMeasurementFromState() {
+  auto* v1 = vertexXnRaw<0>();
+  auto* v2 = vertexXnRaw<1>();
+  measurement_ = (v2->estimate().toVector()) - v1->estimate().toVector();
+
+  return true;
 }
 
 #if 0

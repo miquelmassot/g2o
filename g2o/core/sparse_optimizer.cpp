@@ -298,13 +298,6 @@ bool SparseOptimizer::initializeOptimization(HyperGraph::EdgeSet& eset) {
   return indexMappingStatus;
 }
 
-void SparseOptimizer::setToOrigin() {
-  for (auto& it : vertices()) {
-    auto* v = static_cast<OptimizableGraph::Vertex*>(it.second.get());
-    v->setToOrigin();
-  }
-}
-
 void SparseOptimizer::computeInitialGuess() {
   EstimatePropagator::PropagateCost costFunction(this);
   computeInitialGuess(costFunction);
@@ -354,8 +347,8 @@ void SparseOptimizer::computeInitialGuess(EstimatePropagatorCost& propagator) {
   if (verbose()) {
     computeActiveErrors();
     std::cerr << "iteration= -1\t chi2= " << activeChi2() << "\t time= 0.0"
-              << "\t cumTime= 0.0"
-              << "\t (using initial guess from " << propagator.name() << ")\n";
+              << "\t cumTime= 0.0" << "\t (using initial guess from "
+              << propagator.name() << ")\n";
   }
 }
 

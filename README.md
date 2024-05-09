@@ -96,6 +96,7 @@ following packages.
 
 -   spdlog <https://github.com/gabime/spdlog>
 -   suitesparse <http://faculty.cse.tamu.edu/davis/suitesparse.html>
+-   cereal <https://uscilab.github.io/cereal/index.html>
 -   Qt5 <http://qt-project.org>
 -   libQGLViewer <http://www.libqglviewer.com>
 
@@ -104,6 +105,7 @@ following packages.
 
 -   libspdlog-dev
 -   libsuitesparse-dev
+-   libcereal-dev
 -   qtdeclarative5-dev
 -   qt5-qmake
 -   libqglviewer-dev-qt5
@@ -112,7 +114,7 @@ following packages.
 
 If using [Homebrew](http://brew.sh/), then
 
-`brew install brewsci/science/g2o`
+`brew install g2o`
 
 will install g2o together with its required dependencies. In this case no manual compilation is necessary.
 

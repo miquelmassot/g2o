@@ -47,7 +47,6 @@ template <typename MatrixType>
 class LinearSolver {
  public:
   LinearSolver() = default;
-  ;
   virtual ~LinearSolver() = default;
 
   /**
@@ -141,7 +140,7 @@ class LinearSolver {
   }
 
  protected:
-  bool writeDebug_ = true;
+  bool writeDebug_ = false;
 };
 
 /**

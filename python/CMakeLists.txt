@@ -11,7 +11,7 @@ include(FetchContent)
 FetchContent_Declare(
   pybind11
   GIT_REPOSITORY https://github.com/pybind/pybind11.git
-  GIT_TAG        v2.11.1
+  GIT_TAG        v2.12.0
 )
 # For Windows: Prevent overriding the parent project's compiler/linker settings
 set(PYBIND11_FINDPYTHON ON)
@@ -32,6 +32,7 @@ pybind11_add_module(g2opy
     core/py_factory.cpp
     core/py_hyper_dijkstra.cpp
     core/py_hyper_graph.cpp
+    core/py_io_format.cpp
     core/py_jacobian_workspace.cpp
     core/py_optimizable_graph.cpp
     core/py_optimization_algorithm.cpp
@@ -72,4 +73,4 @@ target_link_libraries(g2opy PRIVATE
     types_slam3d_addons
 )
 target_include_directories(g2opy PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
-install(TARGETS g2opy LIBRARY DESTINATION g2opy)
+install(TARGETS g2opy LIBRARY DESTINATION g2o)

@@ -26,22 +26,49 @@
 
 #include "sampler.h"
 
+#include <cmath>
+#include <cstdlib>
+#include <ctime>
+
 namespace g2o {
 
 namespace {
-std::normal_distribution<double> _univariateSampler(0., 1.);
-std::uniform_real_distribution<double> _uniformReal;
 std::mt19937 _gen_real;
 }  // namespace
 
 double sampleUniform(double min, double max, std::mt19937* generator) {
-  if (generator) return _uniformReal(*generator) * (max - min) + min;
-  return _uniformReal(_gen_real) * (max - min) + min;
+  static std::uniform_real_distribution<double> uniform_real;
+  std::uniform_real_distribution<double>::param_type params(min, max);
+  if (generator) return uniform_real(*generator, params);
+  return uniform_real(_gen_real, params);
 }
 
 double sampleGaussian(std::mt19937* generator) {
+  static std::normal_distribution<double> _univariateSampler(0., 1.);
   if (generator) return _univariateSampler(*generator);
   return _univariateSampler(_gen_real);
 }
+
+double Sampler::gaussRand(double mean, double sigma) {
+  double y;
+  double r2;
+  do {
+    double x = -1.0 + 2.0 * uniformRand(0.0, 1.0);
+    y = -1.0 + 2.0 * uniformRand(0.0, 1.0);
+    r2 = x * x + y * y;
+  } while (r2 > 1.0 || r2 == 0.0);
+  return mean + sigma * y * std::sqrt(-2.0 * log(r2) / r2);
+}
+
+double Sampler::uniformRand(double lowerBndr, double upperBndr) {
+  return lowerBndr + (static_cast<double>(std::rand()) / (RAND_MAX + 1.0)) *
+                         (upperBndr - lowerBndr);
+}
+
+void Sampler::seedRand() {
+  seedRand(static_cast<unsigned int>(std::time(nullptr)));
+}
+
+void Sampler::seedRand(unsigned int seed) { std::srand(seed); }
 
 }  // namespace g2o

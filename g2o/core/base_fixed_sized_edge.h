@@ -111,14 +111,14 @@ std::tuple<Args...> createHessianMaps(const std::tuple<Args...>&) {
 }
 
 template <int I, typename EdgeType, typename... CtorArgs>
-typename std::enable_if<I == -1, OptimizableGraph::Vertex*>::type
-createNthVertexType(int /*i*/, const EdgeType& /*t*/, CtorArgs... /*args*/) {
+std::enable_if_t<I == -1, OptimizableGraph::Vertex*> createNthVertexType(
+    int /*i*/, const EdgeType& /*t*/, CtorArgs... /*args*/) {
   return nullptr;
 }
 
 template <int I, typename EdgeType, typename... CtorArgs>
-typename std::enable_if<I != -1, OptimizableGraph::Vertex*>::type
-createNthVertexType(int i, const EdgeType& t, CtorArgs... args) {
+std::enable_if_t<I != -1, OptimizableGraph::Vertex*> createNthVertexType(
+    int i, const EdgeType& t, CtorArgs... args) {
   if (i == I) {
     using VertexType = typename EdgeType::template VertexXnType<I>;
     return new VertexType(args...);
@@ -139,7 +139,7 @@ class BaseFixedSizedEdge : public BaseEdge<D, E> {
   template <int VertexN>
   static constexpr int VertexDimension() {
     return VertexXnType<VertexN>::kDimension;
-  };
+  }
   /**
    * Get the size of a given Vertex.
    * If the vertex dimension is static and by this known at compile time, we
@@ -147,13 +147,13 @@ class BaseFixedSizedEdge : public BaseEdge<D, E> {
    */
   // clang-format off
   template <int VertexN>
-  constexpr typename std::enable_if<VertexXnType<VertexN>::kDimension != -1, int>::type vertexDimension() const {
+  constexpr  std::enable_if_t<VertexXnType<VertexN>::kDimension != -1, int> vertexDimension() const {
     return VertexXnType<VertexN>::kDimension;
-  };
+  }
   template <int VertexN>
-  typename std::enable_if<VertexXnType<VertexN>::kDimension == -1, int>::type vertexDimension() const {
+   std::enable_if_t<VertexXnType<VertexN>::kDimension == -1, int> vertexDimension() const {
     return vertexXn<VertexN>()->dimension();
-  };
+  }
   // clang-format on
   /**
    * Return a pointer to the N-th vertex, directly casted to the correct type
@@ -204,8 +204,8 @@ class BaseFixedSizedEdge : public BaseEdge<D, E> {
     using type = std::tuple<HessianBlockTypeK<Ints>...>;
     using typeTransposed = std::tuple<HessianBlockTypeKTransposed<Ints>...>;
   };
-  static const std::size_t kNrOfVertices = sizeof...(VertexTypes);
-  static const std::size_t kNrOfVertexPairs =
+  static constexpr std::size_t kNrOfVertices = sizeof...(VertexTypes);
+  static constexpr std::size_t kNrOfVertexPairs =
       internal::pair_to_index(0, kNrOfVertices);
   using HessianTuple = typename HessianTupleType<
       std::make_index_sequence<kNrOfVertexPairs>>::type;
@@ -228,10 +228,9 @@ class BaseFixedSizedEdge : public BaseEdge<D, E> {
   OptimizableGraph::Vertex* createVertex(int i, CtorArgs... args) {
     if (i < 0) return nullptr;
     return internal::createNthVertexType<
-        sizeof...(VertexTypes) - 1,
-        typename std::remove_reference<decltype(*this)>::type, CtorArgs...>(
-        i, *this, args...);
-  };
+        sizeof...(VertexTypes) - 1, std::remove_reference_t<decltype(*this)>,
+        CtorArgs...>(i, *this, args...);
+  }
 
   void resize(size_t size) override;
 
@@ -298,6 +297,10 @@ class BaseFixedSizedEdge : public BaseEdge<D, E> {
 
   using BaseEdge<D, E>::resize;
   using BaseEdge<D, E>::computeError;
+
+  [[nodiscard]] int numVerticesAtCompileTime() const final {
+    return kNrOfVertices;
+  }
 
  protected:
   using BaseEdge<D, E>::measurement_;

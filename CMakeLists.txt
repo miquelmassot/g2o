@@ -35,6 +35,8 @@ option (BUILD_SHARED_LIBS "Build Shared Libraries (preferred and required for th
 set (G2O_LIB_TYPE STATIC)
 if (BUILD_SHARED_LIBS)
   set (G2O_LIB_TYPE SHARED)
+else()
+  set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 endif()
 
 # On the Mac platform, configure the RPATH as per the INSTALL, to
@@ -155,6 +157,7 @@ find_package(OpenGL)
 
 # If OpenGL was found, use the import target if available. If not, use old-style includes
 option(G2O_USE_OPENGL "Build g2o with OpenGL support for visualization" ON)
+set(G2O_HAVE_OPENGL 0)
 if (OPENGL_FOUND AND G2O_USE_OPENGL)
   if (TARGET OpenGL::GL)
     set(G2O_OPENGL_TARGET "OpenGL::GL;OpenGL::GLU")
@@ -162,7 +165,7 @@ if (OPENGL_FOUND AND G2O_USE_OPENGL)
     set(G2O_OPENGL_TARGET "${OPENGL_LIBRARIES}")
     include_directories(${OPENGL_INCLUDE_DIR})
   endif()
-  set (G2O_HAVE_OPENGL 1)
+  set(G2O_HAVE_OPENGL 1)
   message(STATUS "Compiling with OpenGL support")
   #message(WARNING G2O_OPENGL_TARGET=${G2O_OPENGL_TARGET})
 endif()
@@ -172,10 +175,11 @@ find_package(QGLViewer)
 
 # Logging library
 option(G2O_USE_LOGGING "Try to use spdlog for logging" ON)
+set(G2O_HAVE_LOGGING 0)
 if (G2O_USE_LOGGING)
   find_package(spdlog 1.6 QUIET)
   if (TARGET spdlog::spdlog OR TARGET spdlog::spdlog_header_only)
-    set (G2O_HAVE_LOGGING 1)
+    set(G2O_HAVE_LOGGING 1)
     message(STATUS "Compiling with logging support")
   endif()
 endif()
@@ -273,8 +277,6 @@ if(G2O_BUILD_EXAMPLES)
   message(STATUS "Compiling g2o examples")
 endif(G2O_BUILD_EXAMPLES)
 
-option(G2O_FAST_MATH "Enable fast math operations" OFF)
-
 # Start of SSE* autodetect code
 # (borrowed from MRPT CMake scripts, BSD)
 option(DO_SSE_AUTODETECT "Enable autodetection of SSE* CPU sets and enable their use in optimized code" ON)
@@ -349,72 +351,21 @@ if (${CMAKE_CXX_COMPILER_ID} MATCHES "Clang" OR CMAKE_COMPILER_IS_GNUCXX)
 endif()
 # End of of SSE* autodetect code -------
 
-# code coverage
-option(BUILD_CODE_COVERAGE "Enable coverage reporting" OFF)
-if(BUILD_CODE_COVERAGE AND CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
-  message(STATUS "Enabling coverage compiler flags")
-  set(g2o_C_FLAGS "${g2o_C_FLAGS} --coverage")
-  set(g2o_CXX_FLAGS "${g2o_CXX_FLAGS} --coverage")
-endif()
-
-option(BUILD_WITH_CLANG_TIDY "Enable clang-tidy reporting" OFF)
-if(BUILD_WITH_CLANG_TIDY)
-  find_program(CLANGTIDY clang-tidy)
-  set(CMAKE_CXX_CLANG_TIDY "${CLANGTIDY}")
-endif()
-
 # Compiler specific options for gcc
-option (BUILD_WITH_MARCH_NATIVE "Build with \"-march native\"" OFF)
 if(CMAKE_COMPILER_IS_GNUCXX)
   message(STATUS "Compiling with GCC")
 
-  # Generic settings for optimisation
-  set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
-  set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -O3")
-
-  if(G2O_FAST_MATH)
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -ffast-math")
-  endif()
-
-  # switch off optimization for debug builds
-  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0")
-  set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -O0")
-
-  # OS X
-  #if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-    #set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
-    #set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE}")
-  #endif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-  # Linux
-  if(BUILD_WITH_MARCH_NATIVE AND NOT "${CMAKE_SYSTEM_PROCESSOR}" MATCHES "arm" AND "${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -march=native")
-    set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -march=native")
-  endif()
   # activate warnings !!!
-  set(g2o_C_FLAGS "${g2o_C_FLAGS} -Wall -Wextra")
-  set(g2o_CXX_FLAGS "${g2o_CXX_FLAGS} -Wall -Wextra")
+  set(g2o_C_FLAGS "${g2o_C_FLAGS} -Wall -Wextra -Wpedantic")
+  set(g2o_CXX_FLAGS "${g2o_CXX_FLAGS} -Wall -Wextra -Wpedantic")
 endif(CMAKE_COMPILER_IS_GNUCXX)
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   message(STATUS "Compiling with Clang")
 
-  # Linux
-  if(BUILD_WITH_MARCH_NATIVE AND NOT "${CMAKE_SYSTEM_PROCESSOR}" MATCHES "arm" AND "${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -march=native")
-    set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -march=native")
-  endif()
-  # OS X
-  if(BUILD_WITH_MARCH_NATIVE AND "${CMAKE_SYSTEM_NAME}" MATCHES "Darwin")
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -march=native")
-    set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -march=native")
-  endif()
-
   # activate all warnings
-  #set(g2o_C_FLAGS "${g2o_C_FLAGS} -Weverything")
-  #set(g2o_CXX_FLAGS "${g2o_CXX_FLAGS} -Weverything")
-  set(g2o_C_FLAGS "${g2o_C_FLAGS} -Wall -Wextra")
-  set(g2o_CXX_FLAGS "${g2o_CXX_FLAGS} -Wall -Wextra")
-  #set(g2o_CXX_FLAGS "${g2o_CXX_FLAGS} -Wall -stdlib=libc++")
+  set(g2o_C_FLAGS "${g2o_C_FLAGS} -Wall -Wextra -pedantic")
+  set(g2o_CXX_FLAGS "${g2o_CXX_FLAGS} -Wall -Wextra -pedantic")
 endif()
 
 if(MSVC)
@@ -431,16 +382,6 @@ if(MSVC)
   # exception handling
   add_definitions("/EHsc")
 
-  if (G2O_FAST_MATH)
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /fp:fast")
-  endif()
-
-  set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /Ox /Oi")
-  set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} /Ox /Oi")
-
-  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /Od")
-  set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} /Od")
-
   # SSE2 optimizations
   # No need to specify if building for x64 (actually, it generates an annoying warning)
   if (NOT MSVC_ARM)
@@ -454,9 +395,7 @@ if(MSVC)
     add_definitions("/wd4251")
   endif()
 
-  # Fix issue: https://github.com/RainerKuemmerle/g2o/issues/66
-  #            Link error LNK2005 due to duplicated symbols
-  add_definitions("/Ob2")
+  add_definitions("/bigobj") # Avoid C1128
   # Fix other stupid warnings:
   add_definitions(-D_CRT_SECURE_NO_WARNINGS=1)  # Avoid deprecated fprintf(), etc.
   add_definitions("/nologo")
@@ -478,20 +417,18 @@ endif(MSVC)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${g2o_CXX_FLAGS}")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${g2o_C_FLAGS}")
 
-# Find Eigen3. If it defines the target, this is used. If not,
-# fall back to the using the module form.
-# See https://eigen.tuxfamily.org/dox/TopicCMakeGuide.html for details
 find_package(Eigen3 3.3 REQUIRED)
-if (TARGET Eigen3::Eigen)
-  set(G2O_EIGEN3_EIGEN_TARGET Eigen3::Eigen)
-else()
-  include_directories(${EIGEN3_INCLUDE_DIR})
-endif ()
+find_package(cereal)
 
 # Generate config.h
 set(G2O_OPENGL_FOUND ${OPENGL_FOUND})
 set(G2O_HAVE_CHOLMOD ${CHOLMOD_FOUND})
 set(G2O_HAVE_CSPARSE ${G2O_USE_CSPARSE})
+if (TARGET cereal::cereal)
+  set(G2O_HAVE_CEREAL 1)
+else()
+  set(G2O_HAVE_CEREAL 0)
+endif()
 set(G2O_SHARED_LIBS ${BUILD_SHARED_LIBS})
 set(G2O_LGPL_SHARED_LIBS ${BUILD_LGPL_SHARED_LIBS})
 set(G2O_CXX_COMPILER "${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER}")
@@ -514,7 +451,6 @@ configure_file(config.h.in "${PROJECT_BINARY_DIR}/g2o/config.h")
 install(FILES ${PROJECT_BINARY_DIR}/g2o/config.h DESTINATION ${INCLUDES_DESTINATION}/g2o)
 
 configure_file("${g2o_SOURCE_DIR}/cmake_modules/Config.cmake.in" "${G2O_PROJECT_CONFIG}" @ONLY)
-configure_file("${g2o_SOURCE_DIR}/script/codecov.sh.in" "${CMAKE_CURRENT_BINARY_DIR}/codecov.sh" @ONLY)
 
 install(
     FILES "${G2O_PROJECT_CONFIG}" "${G2O_VERSION_CONFIG}"

@@ -28,8 +28,7 @@
 #define G2O_BASE_EDGE_H
 
 #include <Eigen/Core>
-#include <iostream>
-#include <limits>
+#include <climits>
 #include <type_traits>
 
 #include "g2o/core/type_traits.h"
@@ -108,7 +107,8 @@ class BaseEdge : public OptimizableGraph::Edge {
     return information_;
   }
   EIGEN_STRONG_INLINE InformationType& information() { return information_; }
-  void setInformation(const InformationType& information) {
+  template <typename Derived>
+  void setInformation(const Eigen::EigenBase<Derived>& information) {
     information_ = information;
   }
 
@@ -138,16 +138,19 @@ class BaseEdge : public OptimizableGraph::Edge {
    * time.
    */
   template <int Dim = D>
-  typename std::enable_if<Dim == -1, void>::type setDimension(int dim) {
+  std::enable_if_t<Dim == -1, void> setDimension(int dim) {
     dimension_ = dim;
     information_.resize(dim, dim);
     error_.resize(dim, 1);
   }
 
+  [[nodiscard]] int dimensionAtCompileTime() const final { return kDimension; }
+
   // methods based on the traits interface
   bool setMeasurementData(const double* d) final {
+    if (d == nullptr) return false;
     static_assert(TypeTraits<Measurement>::kVectorDimension != INT_MIN,
-                  "Forgot to implement TypeTrait for your Measurement");
+                  "Forgot to implement TypeTraits for your Measurement");
     typename TypeTraits<Measurement>::VectorType::ConstMapType aux(
         d, DimensionTraits<Measurement>::dimension(measurement_));
     setMeasurement(TypeTraits<Measurement>::fromVector(aux));
@@ -156,7 +159,7 @@ class BaseEdge : public OptimizableGraph::Edge {
 
   bool getMeasurementData(double* d) const final {
     static_assert(TypeTraits<Measurement>::kVectorDimension != INT_MIN,
-                  "Forgot to implement TypeTrait for your Measurement");
+                  "Forgot to implement TypeTraits for your Measurement");
     typename TypeTraits<Measurement>::VectorType::MapType aux(
         d, DimensionTraits<Measurement>::dimension(measurement_));
     TypeTraits<Measurement>::toData(measurement_, d);
@@ -164,13 +167,32 @@ class BaseEdge : public OptimizableGraph::Edge {
   }
 
   [[nodiscard]] int measurementDimension() const final {
+    return DimensionTraits<Measurement>::dimension(measurement_);
+  }
+
+  [[nodiscard]] int measurementDimensionAtCompileTime() const override {
     return TypeTraits<Measurement>::kVectorDimension;
   }
 
+  [[nodiscard]] int minimalMeasurementDimension() const final {
+    return DimensionTraits<Measurement>::minimalDimension(measurement_);
+  }
+
+  //! Return the identity information matrix of this edge type
+  InformationType informationIdentity() const {
+    if constexpr (D != Eigen::Dynamic) {
+      return InformationType::Identity();
+    } else {
+      const int dim_to_use = std::max(0, dimension_);
+      return InformationType::Identity(dim_to_use, dim_to_use);
+    }
+  }
+
  protected:
-  Measurement measurement_;      ///< the measurement of the edge
-  InformationType information_;  ///< information matrix of the edge.
-                                 ///< Information = inv(covariance)
+  Measurement measurement_;  ///< the measurement of the edge
+  InformationType information_ =
+      informationIdentity();  ///< information matrix of the edge.
+                              ///< Information = inv(covariance)
   ErrorVector error_;  ///< error vector, stores the result after computeError()
                        ///< is called
 
@@ -185,40 +207,6 @@ class BaseEdge : public OptimizableGraph::Edge {
     // weightedError.transpose());
     return result;
   }
-
-  //! write the upper trinagular part of the information matrix into the stream
-  bool writeInformationMatrix(std::ostream& os) const {
-    for (int i = 0; i < information().rows(); ++i)
-      for (int j = i; j < information().cols(); ++j)
-        os << information()(i, j) << " ";
-    return os.good();
-  }
-  //! reads the upper triangular part of the matrix and recovers the missing
-  //! symmetrical elements
-  bool readInformationMatrix(std::istream& is) {
-    for (int i = 0; i < information().rows() && is.good(); ++i)
-      for (int j = i; j < information().cols() && is.good(); ++j) {
-        is >> information()(i, j);
-        if (i != j) information()(j, i) = information()(i, j);
-      }
-    return is.good() || is.eof();
-  }
-  //! write the param IDs that are potentially used by the edge
-  bool writeParamIds(std::ostream& os) const {
-    for (auto id : parameterIds_) os << id << " ";
-    return os.good();
-  }
-  //! reads the param IDs from the stream
-  bool readParamIds(std::istream& is) {
-    for (size_t i = 0; i < numParameters(); ++i) {
-      int paramId;
-      is >> paramId;
-      setParameterId(i, paramId);
-    }
-    return is.good() || is.eof();
-  }
-
- public:
 };
 
 }  // end namespace g2o

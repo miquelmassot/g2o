@@ -27,17 +27,11 @@
 #ifndef G2O_EDGE_SE3_LINE_H_
 #define G2O_EDGE_SE3_LINE_H_
 
-#include <iosfwd>
 #include <memory>
-#include <tuple>
 
 #include "g2o/config.h"
 #include "g2o/core/base_binary_edge.h"
 #include "g2o/core/eigen_types.h"
-#include "g2o/core/hyper_graph.h"
-#include "g2o/core/hyper_graph_action.h"
-#include "g2o/stuff/property.h"
-#include "g2o/types/slam3d/parameter_se3_offset.h"
 #include "g2o/types/slam3d/vertex_se3.h"
 #include "g2o_types_slam3d_addons_api.h"
 #include "line3d.h"
@@ -50,9 +44,6 @@ class G2O_TYPES_SLAM3D_ADDONS_API EdgeSE3Line3D
     : public BaseBinaryEdge<4, Line3D, VertexSE3, VertexLine3D> {
  public:
   EdgeSE3Line3D();
-
-  bool read(std::istream& is) override;
-  bool write(std::ostream& os) const override;
 
   void computeError() override;
 
@@ -68,13 +59,12 @@ class G2O_TYPES_SLAM3D_ADDONS_API EdgeSE3Line3D
 };
 
 #ifdef G2O_HAVE_OPENGL
-class EdgeSE3Line3DDrawAction : public DrawAction {
+class G2O_TYPES_SLAM3D_ADDONS_API EdgeSE3Line3DDrawAction : public DrawAction {
  public:
-  G2O_TYPES_SLAM3D_ADDONS_API EdgeSE3Line3DDrawAction();
-  G2O_TYPES_SLAM3D_ADDONS_API bool operator()(
-      HyperGraph::HyperGraphElement& element,
-      const std::shared_ptr<HyperGraphElementAction::Parameters>& params_)
-      override;
+  EdgeSE3Line3DDrawAction();
+  bool operator()(HyperGraph::HyperGraphElement& element,
+                  const std::shared_ptr<HyperGraphElementAction::Parameters>&
+                      params_) override;
 
  protected:
   bool refreshPropertyPtrs(

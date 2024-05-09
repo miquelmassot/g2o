@@ -27,45 +27,19 @@
 #ifndef G2O_EDGE_LINE2D_POINTXY_H
 #define G2O_EDGE_LINE2D_POINTXY_H
 
-#include <Eigen/Core>
-#include <cmath>
-#include <iosfwd>
-
-#include "g2o/config.h"
 #include "g2o/core/base_binary_edge.h"
-#include "g2o/core/eigen_types.h"
-#include "g2o/stuff/misc.h"
 #include "g2o/types/slam2d/vertex_point_xy.h"
 #include "g2o_types_slam2d_addons_api.h"
 #include "vertex_line2d.h"
 
 namespace g2o {
 
-class EdgeLine2DPointXY
-    : public BaseBinaryEdge<1, double, VertexLine2D,
-                            VertexPointXY>  // Avoid redefinition of BaseEdge in
-                                            // MSVC
-{
+class G2O_TYPES_SLAM2D_ADDONS_API EdgeLine2DPointXY
+    : public BaseBinaryEdge<1, double, VertexLine2D, VertexPointXY> {
  public:
-  G2O_TYPES_SLAM2D_ADDONS_API void computeError() override {
-    const VertexLine2D* l = vertexXnRaw<0>();
-    const VertexPointXY* p = vertexXnRaw<1>();
-    Vector2 n(std::cos(l->theta()), std::sin(l->theta()));
-    double prediction = n.dot(p->estimate()) - l->rho();
-    error_[0] = prediction - measurement_;
-  }
+  void computeError() override;
 
-  G2O_TYPES_SLAM2D_ADDONS_API bool setMeasurementFromState() override {
-    const VertexLine2D* l = vertexXnRaw<0>();
-    const VertexPointXY* p = vertexXnRaw<1>();
-    Vector2 n(std::cos(l->theta()), std::sin(l->theta()));
-    double prediction = n.dot(p->estimate()) - l->rho();
-    measurement_ = prediction;
-    return true;
-  }
-
-  G2O_TYPES_SLAM2D_ADDONS_API bool read(std::istream& is) override;
-  G2O_TYPES_SLAM2D_ADDONS_API bool write(std::ostream& os) const override;
+  bool setMeasurementFromState() override;
 };
 
 }  // namespace g2o

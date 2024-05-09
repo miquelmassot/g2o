@@ -26,10 +26,6 @@
 
 #include "edge_line2d.h"
 
-#include "g2o/config.h"
-#include "g2o/core/io_helper.h"
-#include "g2o/types/slam2d_addons/vertex_line2d.h"
-
 namespace g2o {
 
 EdgeLine2D::EdgeLine2D() {
@@ -37,14 +33,19 @@ EdgeLine2D::EdgeLine2D() {
   error_.setZero();
 }
 
-bool EdgeLine2D::read(std::istream& is) {
-  internal::readVector(is, measurement_);
-  return readInformationMatrix(is);
+void EdgeLine2D::computeError() {
+  const VertexLine2D* v1 = vertexXnRaw<0>();
+  const VertexLine2D* v2 = vertexXnRaw<1>();
+  for (int i = 0; i < 2; ++i)
+    error_[i] = (v2->estimate()[i] - v1->estimate()[i]) - measurement_[i];
 }
 
-bool EdgeLine2D::write(std::ostream& os) const {
-  internal::writeVector(os, measurement());
-  return writeInformationMatrix(os);
+bool EdgeLine2D::setMeasurementFromState() {
+  const VertexLine2D* v1 = vertexXnRaw<0>();
+  const VertexLine2D* v2 = vertexXnRaw<1>();
+  measurement_ = Line2D(TypeTraits<Line2D>::toVector(v2->estimate()) -
+                        TypeTraits<Line2D>::toVector(v1->estimate()));
+  return true;
 }
 
 void EdgeLine2D::linearizeOplus() {

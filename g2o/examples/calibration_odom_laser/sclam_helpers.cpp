@@ -49,7 +49,8 @@ static constexpr double kInformationScalingOdometry = 100;
 void addOdometryCalibLinksDifferential(SparseOptimizer& optimizer,
                                        const DataQueue& odomData) {
   auto odomParamsVertex = std::make_shared<VertexOdomDifferentialParams>();
-  odomParamsVertex->setToOrigin();
+  odomParamsVertex->setEstimate(
+      VertexOdomDifferentialParams::EstimateType::Ones());
   odomParamsVertex->setId(Gm2dlIO::kIdOdomcalib);
   optimizer.addVertex(odomParamsVertex);
 
@@ -66,22 +67,21 @@ void addOdometryCalibLinksDifferential(SparseOptimizer& optimizer,
       continue;
     }
 
-    auto rl1 = std::dynamic_pointer_cast<RobotLaser>(r1->userData());
-    auto rl2 = std::dynamic_pointer_cast<RobotLaser>(r2->userData());
+    auto rl1 = std::dynamic_pointer_cast<RobotLaser>(r1->userData().front());
+    auto rl2 = std::dynamic_pointer_cast<RobotLaser>(r2->userData().front());
     auto odom1 = std::dynamic_pointer_cast<RobotLaser>(
         odomData.findClosestData(rl1->timestamp()));
     auto odom2 = std::dynamic_pointer_cast<RobotLaser>(
         odomData.findClosestData(rl2->timestamp()));
 
     if (fabs(rl1->timestamp() - rl2->timestamp()) < 1e-7) {
-      std::cerr << "strange edge " << r1->id() << " <-> " << r2->id()
-                << std::endl;
+      std::cerr << "strange edge " << r1->id() << " <-> " << r2->id() << '\n';
       std::cerr << FIXED(PVAR(rl1->timestamp())
                          << "\t " << PVAR(rl2->timestamp()))
-                << std::endl;
+                << '\n';
       std::cerr << FIXED(PVAR(odom1->timestamp())
                          << "\t " << PVAR(odom2->timestamp()))
-                << std::endl;
+                << '\n';
     }
 
     // cerr << PVAR(odom1->odomPose().toVector().transpose()) << endl;
